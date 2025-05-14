@@ -169,23 +169,55 @@ section h2::after {
 /* Bärenarten Sektion */
 .species-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 30px;
+    position: relative;
 }
 
 .species-card {
+    transition: all 0.3s ease-in-out;
+    position: relative;
+    width: 100%;
     background-color: var(--card-bg);
     border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    display: flex;
-    flex-direction: column;
+    grid-column: auto / span 1;
+    display: flex;              /* hinzugefügt */
+    flex-direction: column;     /* hinzugefügt */
+    min-height: 500px;          /* ggf. anpassen */
 }
 
-.species-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 12px 25px rgba(0,0,0,0.12);
+.species-card.expanded {
+    position: relative;
+    grid-column: 1 / -1;
+    z-index: 2;
+    box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+}
+
+.details-content {
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out;
+}
+
+.species-card.expanded .details-content {
+    opacity: 1;
+    height: auto;
+    display: block;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.details-item {
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
 }
 
 .species-card img {
