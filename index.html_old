@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Zufälliger Braunbär</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 40px;
+    }
+    img {
+      width: 600px;
+      max-width: 90%;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <h1>"Random" Bear 🐻</h1>
+  <p>Bilder stammen von Pixabay.</p>
+  <div id="image-container">
+    <img id="bearImage" src="" alt="Braunbär">
+  </div>
+
+  <script>
+    const bearImages = [
+      "https://cdn.pixabay.com/photo/2021/07/30/16/00/grizzly-bear-6510170_1280.jpg",
+      "https://cdn.pixabay.com/photo/2018/04/10/16/59/bear-3308068_1280.jpg",
+      "https://cdn.pixabay.com/photo/2024/06/22/05/25/bear-8845470_1280.jpg",
+      "https://cdn.pixabay.com/photo/2023/09/25/19/52/bear-8275920_1280.jpg",
+      "https://cdn.pixabay.com/photo/2019/09/21/15/36/animal-4494180_1280.jpg"
+    ];
+
+    // Zufälliges Bild auswählen
+    const randomIndex = Math.floor(Math.random() * bearImages.length);
+    document.getElementById("bearImage").src = bearImages[randomIndex];
+  </script>
+</body>
+</html>
