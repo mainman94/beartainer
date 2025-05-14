@@ -1,0 +1,51 @@
+name: Release Helm Chart
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'charts/beartainer/**'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.12.3
+
+      - name: Set up Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Package Helm chart
+        run: |
+          mkdir -p packaged
+          helm package charts/beartainer -d packaged
+
+      - name: Download existing index.yaml
+        run: |
+          mkdir -p repo
+          git clone --depth=1 --branch=gh-pages https://github.com/${{ github.repository }} repo
+          cp repo/index.yaml repo_index.yaml || true
+
+      - name: Update Helm repo index
+        run: |
+          helm repo index packaged --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} --merge repo_index.yaml
+
+      - name: Push to gh-pages
+        run: |
+          cp -r packaged/* repo/
+          cd repo
+          git add .
+          git commit -m "Update Helm chart from GitHub Actions"
+          git push origin gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
