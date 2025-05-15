@@ -55,7 +55,7 @@ jobs:
 
       - name: Prepare repo_index.yaml
         run: |
-          if [ ! -s repo/index.yaml ]; then
+          if [ ! -s repo/index.yaml ] || ! grep -q 'apiVersion:' repo/index.yaml; then
             echo -e "apiVersion: v1\nentries: {}" > repo/index.yaml
           fi
           cp repo/index.yaml repo_index.yaml
@@ -69,6 +69,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cp -r packaged/* repo/
+          cp packaged/index.yaml repo/index.yaml
           cd repo
           git add .
           if ! git diff --quiet; then
