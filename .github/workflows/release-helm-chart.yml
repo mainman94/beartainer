@@ -25,6 +25,18 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
+      - name: Ensure gh-pages branch exists
+        run: |
+          git ls-remote --exit-code --heads https://github.com/${{ github.repository }} gh-pages || \
+          (git clone --depth=1 https://github.com/${{ github.repository }} temp && \
+           cd temp && \
+           git checkout --orphan gh-pages && \
+           git rm -rf . && \
+           touch index.yaml && \
+           git add index.yaml && \
+           git commit -m "Initialize gh-pages" && \
+           git push origin gh-pages)
+
       - name: Package Helm chart
         run: |
           mkdir -p packaged
