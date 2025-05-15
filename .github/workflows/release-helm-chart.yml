@@ -5,11 +5,11 @@ on:
     branches:
       - main
     paths:
-      - 'charts/beartainer/**'
-  workflow_dispatch:
+      - 'charts/beartainer/**' # Stellt sicher, dass der Pfad korrekt ist und auf dein Chart-Verzeichnis zeigt
+  workflow_dispatch: # Ermöglicht manuelles Auslösen
 
 permissions:
-  contents: write
+  contents: write # Notwendig, um in den gh-pages Branch zu pushen und ihn ggf. zu erstellen
 
 jobs:
   release:
@@ -17,65 +17,112 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Aktualisiert auf v4 für die neuesten Funktionen und Sicherheitspatches
+        with:
+          fetch-depth: 0 # Lädt die gesamte Git-Historie, nützlich für einige Git-Operationen (optional, aber oft gute Praxis)
 
       - name: Set up Helm
         uses: azure/setup-helm@v3
         with:
-          version: v3.12.3
+          version: v3.12.3 # Beibehaltung der von dir spezifizierten Helm-Version
 
-      - name: Set up Git
+      - name: Set up Git user
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Ensure gh-pages branch exists
+      - name: Ensure gh-pages branch exists and initialize if needed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if ! git ls-remote --exit-code --heads https://github.com/${{ github.repository }} gh-pages; then
-            git clone --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} temp
-            cd temp
+          # Überprüft, ob der gh-pages Branch remote existiert (mit Token für private Repos)
+          if git ls-remote --exit-code --heads "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}" gh-pages; then
+            echo "gh-pages branch already exists."
+          else
+            echo "gh-pages branch does not exist. Creating it..."
+            # Temporäres Verzeichnis für die Erstellung des Branches
+            TEMP_DIR_GH_PAGES_INIT=$(mktemp -d)
+            # Klonen des Repositories (Standardbranch wird ausgecheckt)
+            git clone --depth=1 "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}" "$TEMP_DIR_GH_PAGES_INIT"
+            cd "$TEMP_DIR_GH_PAGES_INIT"
+            # Erstellen eines neuen, verwaisten gh-pages Branch
             git checkout --orphan gh-pages
+            # Entfernen aller Dateien aus dem Arbeitsverzeichnis und dem Index
             git rm -rf .
-            echo -e "apiVersion: v1\nentries: {}" > index.yaml
+            # Erstellen einer initialen, leeren index.yaml
+            cat <<EOF > index.yaml
+apiVersion: v1
+entries: {}
+EOF
             git add index.yaml
-            git commit -m "Initialize gh-pages"
-            git push origin gh-pages
+            # Git-Benutzer ist bereits global konfiguriert
+            git commit -m "Initialize gh-pages with empty index.yaml"
+            # Pushen des neuen gh-pages Branch zum Remote-Repository
+            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}" gh-pages
+            # Aufräumen
+            cd ..
+            rm -rf "$TEMP_DIR_GH_PAGES_INIT"
+            echo "gh-pages branch created and initialized."
           fi
 
       - name: Package Helm chart
         run: |
-          mkdir -p packaged
-          helm package charts/beartainer -d packaged
+          mkdir -p packaged_charts # Eindeutiger Name für das Verzeichnis der gepackten Charts
+          # Ersetze 'charts/beartainer' mit dem tatsächlichen Pfad zu deinem Chart, falls anders
+          helm package charts/beartainer -d packaged_charts
 
-      - name: Clone gh-pages branch
+      - name: Download existing Helm repo index.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Token für den Klonvorgang (wichtig für private Repos)
         run: |
-          git clone --depth=1 --branch=gh-pages https://github.com/${{ github.repository }} repo
+          mkdir -p helm_repo_checkout # Verzeichnis für den gh-pages Checkout
+          # Klonen des gh-pages Branch, mit Token für private Repos
+          git clone --depth=1 --branch=gh-pages "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}" helm_repo_checkout
+          # Kopieren der index.yaml nach current_index.yaml, falls sie existiert.
+          # '|| true' behandelt den Fall, dass index.yaml nicht existiert (z.B. beim allerersten Lauf).
+          cp helm_repo_checkout/index.yaml current_index.yaml || true
 
-      - name: Prepare repo_index.yaml
+      - name: Ensure current_index.yaml is valid (not empty)
         run: |
-          if [ ! -s repo/index.yaml ] || ! grep -q 'apiVersion:' repo/index.yaml; then
-            echo -e "apiVersion: v1\nentries: {}" > repo/index.yaml
+          # Wenn current_index.yaml existiert, aber leer ist (oder cp fehlgeschlagen ist und sie nicht existiert),
+          # wird sie mit Standardinhalt initialisiert, um Fehler bei 'helm repo index --merge' zu vermeiden.
+          if [ ! -s current_index.yaml ]; then
+            echo "current_index.yaml is empty or does not exist. Initializing with default content."
+            cat <<EOF > current_index.yaml
+apiVersion: v1
+entries: {}
+EOF
           fi
-          cp repo/index.yaml repo_index.yaml
 
       - name: Update Helm repo index
         run: |
-          helm repo index packaged --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} --merge repo_index.yaml
+          # Erstellt/aktualisiert die Indexdatei im 'packaged_charts'-Verzeichnis.
+          # Die URL sollte auf den GitHub Pages Endpunkt deines Repositories zeigen.
+          helm repo index packaged_charts --url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}" --merge current_index.yaml
 
-      - name: Commit and push to gh-pages
+      - name: Push to gh-pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cp -r packaged/* repo/
-          cp packaged/index.yaml repo/index.yaml
-          cd repo
+          # helm_repo_checkout: Klon des gh-pages Branch.
+          # packaged_charts/: Enthält das neue Chart-Paket (.tgz) und die aktualisierte packaged_charts/index.yaml.
+          
+          # Kopieren des neu gepackten Charts und der aktualisierten index.yaml in das gh-pages Checkout-Verzeichnis.
+          # Das überschreibt die alte index.yaml in helm_repo_checkout mit der neu generierten.
+          cp -r packaged_charts/* helm_repo_checkout/
+          
+          cd helm_repo_checkout
           git add .
-          if ! git diff --quiet; then
-            git commit -m "Update Helm chart from GitHub Actions"
-            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-            git push origin gh-pages
+          
+          # Commit nur, wenn es Änderungen im Staging-Bereich gibt.
+          if git diff --staged --quiet; then
+            echo "No changes to commit to gh-pages."
           else
-            echo "No changes to commit."
+            # Git-Benutzer ist bereits global konfiguriert.
+            git commit -m "Update Helm chart release for commit ${{ github.sha }}" # Aussagekräftigere Commit-Nachricht
+            # Die Remote-URL 'origin' im helm_repo_checkout sollte bereits korrekt sein.
+            # Das Setzen der URL mit Token stellt die Push-Berechtigung sicher.
+            git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+            git push origin gh-pages
+            echo "Helm chart and index pushed to gh-pages branch."
           fi
