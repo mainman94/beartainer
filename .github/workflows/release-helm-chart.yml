@@ -55,6 +55,13 @@ jobs:
           git clone --depth=1 --branch=gh-pages https://github.com/${{ github.repository }} repo
           cp repo/index.yaml repo_index.yaml || true
 
+      - name: Fix empty index.yaml if needed
+        run: |
+          if [ -f repo_index.yaml ] && [ ! -s repo_index.yaml ]; then
+            echo "apiVersion: v1
+entries: {}" > repo_index.yaml
+          fi
+
       - name: Update Helm repo index
         run: |
           helm repo index packaged --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} --merge repo_index.yaml
