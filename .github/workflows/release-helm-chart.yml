@@ -33,43 +33,48 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git ls-remote --exit-code --heads https://github.com/${{ github.repository }} gh-pages || \
-          (git clone --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} temp && \
-           cd temp && \
-           git checkout --orphan gh-pages && \
-           git rm -rf . && \
-           echo "apiVersion: v1\nentries: {}" > index.yaml && \
-           git add index.yaml && \
-           git commit -m "Initialize gh-pages" && \
-           git push origin gh-pages)
+          if ! git ls-remote --exit-code --heads https://github.com/${{ github.repository }} gh-pages; then
+            git clone --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} temp
+            cd temp
+            git checkout --orphan gh-pages
+            git rm -rf .
+            echo -e "apiVersion: v1\nentries: {}" > index.yaml
+            git add index.yaml
+            git commit -m "Initialize gh-pages"
+            git push origin gh-pages
+          fi
 
       - name: Package Helm chart
         run: |
           mkdir -p packaged
           helm package charts/beartainer -d packaged
 
-      - name: Download existing index.yaml
+      - name: Clone gh-pages branch
         run: |
-          mkdir -p repo
           git clone --depth=1 --branch=gh-pages https://github.com/${{ github.repository }} repo
-          cp repo/index.yaml repo_index.yaml || true
 
-      - name: Fix empty index.yaml if needed
+      - name: Prepare repo_index.yaml
         run: |
-          if [ -f repo_index.yaml ] && [ ! -s repo_index.yaml ]; then
-            echo "apiVersion: v1
-entries: {}" > repo_index.yaml
+          if [ ! -s repo/index.yaml ]; then
+            echo -e "apiVersion: v1\nentries: {}" > repo/index.yaml
           fi
+          cp repo/index.yaml repo_index.yaml
 
       - name: Update Helm repo index
         run: |
           helm repo index packaged --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} --merge repo_index.yaml
 
-      - name: Push to gh-pages
+      - name: Commit and push to gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cp -r packaged/* repo/
           cd repo
           git add .
-          git diff --quiet && echo "No changes to commit" || git commit -m "Update Helm chart from GitHub Actions"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push origin gh-pages
+          if ! git diff --quiet; then
+            git commit -m "Update Helm chart from GitHub Actions"
+            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+            git push origin gh-pages
+          else
+            echo "No changes to commit."
+          fi
