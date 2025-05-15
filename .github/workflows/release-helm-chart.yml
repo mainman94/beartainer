@@ -7,7 +7,6 @@ on:
     paths:
       - 'charts/beartainer/**'
   workflow_dispatch:
-    
 
 jobs:
   release:
@@ -29,7 +28,7 @@ jobs:
 
       - name: Ensure gh-pages branch exists
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           git ls-remote --exit-code --heads https://github.com/${{ github.repository }} gh-pages || \
           (git clone --depth=1 https://github.com/${{ github.repository }} temp && \
@@ -39,7 +38,7 @@ jobs:
            touch index.yaml && \
            git add index.yaml && \
            git commit -m "Initialize gh-pages" && \
-           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git && \
+           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git && \
            git push origin gh-pages)
 
       - name: Package Helm chart
@@ -65,4 +64,4 @@ jobs:
           git commit -m "Update Helm chart from GitHub Actions"
           git push origin gh-pages
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
