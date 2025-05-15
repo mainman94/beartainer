@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Die faszinierende Welt der Bären</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="index.html" class="logo">Bären</a>
+                <ul class="nav-links">
+                    <li><a href="#arten">Bärenarten</a></li>
+                    <li><a href="#ueber-uns">Über uns</a></li>
+                    <li><a href="#kontakt">Kontakt</a></li>
+                </ul>
+                <button class="menu-toggle" aria-label="Menü öffnen">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </nav>
+        <div class="hero-section">
+            <div class="container">
+                <h1>Entdecke die Vielfalt der Bären</h1>
+                <p>Eine Reise durch die Lebensräume und Eigenheiten beeindruckender Spezies.</p>
+                <a href="#arten" class="cta-button">Zu den Bärenarten</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section id="arten" class="bear-species-section">
+            <div class="container">
+                <h2>Unsere Bärenarten im Überblick</h2>
+                <div class="species-grid" id="speciesGrid">
+                    </div>
+            </div>
+        </section>
+
+        <section id="ueber-uns" class="about-section">
+            <div class="container">
+                <h2>Über dieses Projekt</h2>
+                <p>Willkommen bei BärenWelt! Unser Ziel ist es, Ihnen fundierte und ansprechende Informationen über die verschiedenen Bärenarten der Welt zu bieten. Diese Seite wurde mit Leidenschaft für die Natur und modernster Webtechnologie erstellt, um ein benutzerfreundliches und informatives Erlebnis zu gewährleisten.</p>
+                <p>Wir glauben, dass Wissen der erste Schritt zum Schutz dieser faszinierenden Tiere ist. Entdecken Sie mit uns die Welt der Bären!</p>
+            </div>
+        </section>
+
+        <section id="kontakt" class="contact-section">
+            <div class="container">
+                <h2>Kontaktieren Sie uns</h2>
+                <p>Haben Sie Fragen oder Anregungen? Wir freuen uns auf Ihre Nachricht.</p>
+                <form class="contact-form">
+                    <input type="text" name="name" placeholder="Ihr Name" required>
+                    <input type="email" name="email" placeholder="Ihre E-Mail-Adresse" required>
+                    <textarea name="message" placeholder="Ihre Nachricht" rows="5" required></textarea>
+                    <button type="submit" class="cta-button">Nachricht senden</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 BärenWelt. Alle Rechte vorbehalten.</p>
+            <p>Bilder von <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Pexels</a>, <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer">Unsplash</a> und <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a> (Details auf den jeweiligen Bildquellseiten).</p>
+        </div>
+    </footer>
+
+    <script src="data/bear_data.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>

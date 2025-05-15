@@ -57,12 +57,14 @@ jobs:
           --cache-to=type=local,dest=/tmp/.buildx-cache \
           -t dockerha08/beartainer:latest \
           -t dockerha08/beartainer:${{ steps.version.outputs.next_tag }} \
-          --build-arg BUILD_VERSION=${{ steps.version.outputs.next_tag }} .
+          --build-arg BUILD_VERSION=${{ steps.version.outputs.next_tag }} \
+          -f docker/Dockerfile docker/
 
     - name: Push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: docker/
+        file: docker/Dockerfile
         push: true
         tags: |
           dockerha08/beartainer:latest
